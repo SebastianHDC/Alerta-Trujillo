@@ -49,6 +49,22 @@ npm.cmd run dev
 
 No cierres esta terminal. Abre [http://127.0.0.1:5173](http://127.0.0.1:5173). En desarrollo, Vite reenvía las rutas `/api` a FastAPI en el puerto 8000; por eso deben estar activos los dos servidores.
 
+### Probar desde el celular
+
+Esta versión es una aplicación web de React y Vite, no un proyecto Expo/React Native. Expo Go no abre esta URL; usa el navegador del celular. Para Expo Go haría falta crear una interfaz nativa Expo aparte.
+
+1. Conecta la PC y el celular a la misma red local. En la PC ejecuta `ipconfig` y busca la dirección IPv4 del adaptador conectado, por ejemplo `192.168.18.11`. No uses `localhost` ni `127.0.0.1` en el celular: esas direcciones apuntan al propio teléfono.
+2. En la terminal 2, detén Vite con `Ctrl+C` y vuelve a iniciarlo usando la IPv4 de tu PC:
+
+   ```powershell
+   npm.cmd run dev -- --host 192.168.18.11
+   ```
+
+   Reemplaza `192.168.18.11` si `ipconfig` muestra otra dirección.
+3. En Chrome o Safari del celular abre `http://192.168.18.11:5173`. Vite mantiene el proxy de `/api` hacia FastAPI en la PC.
+
+Si no conecta, confirma que ambos equipos estén en la misma red y que Windows Firewall permita Node.js en redes privadas. No hace falta exponer FastAPI directamente al celular.
+
 ### 3. Probar el flujo de demostración
 
 En la interfaz, entra a **Perfil** y selecciona el acceso **Vecino**. Envía un reporte desde **Reportar**. Luego sal de la cuenta, vuelve a **Perfil** y entra como **Moderador**. En **Revisión**, publica el reporte con un resumen público y un nivel de riesgo. El mapa muestra los reportes publicados; las ubicaciones y descripciones de demostración son ficticias.

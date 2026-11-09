@@ -1,0 +1,525 @@
+{
+  "info": {
+    "name": "Alerta Trujillo · Flujo de demostración",
+    "description": "Ejecuta en orden sobre una base local de demostración. Postman conserva la cookie de sesión. Cada ejecución registra un usuario y publica un reporte de prueba.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api"
+    },
+    {
+      "key": "citizen_email",
+      "value": ""
+    },
+    {
+      "key": "citizen_password",
+      "value": "VecinoPostman26!"
+    },
+    {
+      "key": "moderator_email",
+      "value": "moderador@example.com"
+    },
+    {
+      "key": "moderator_password",
+      "value": "ModeradorDemo26!"
+    },
+    {
+      "key": "incident_time",
+      "value": ""
+    },
+    {
+      "key": "report_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Comprobar API",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "Consultar alertas publicadas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/reports?days=30"
+      }
+    },
+    {
+      "name": "Registrar vecino de prueba",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('citizen_email', 'vecino+' + pm.variables.replaceIn('{{$randomUUID}}') + '@example.com');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().role).to.eql('citizen');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Prueba Postman\",\n  \"email\": \"{{citizen_email}}\",\n  \"password\": \"{{citizen_password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/auth/register"
+      }
+    },
+    {
+      "name": "Enviar reporte",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('incident_time', new Date().toISOString());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 201', () => pm.response.to.have.status(201));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  const report = pm.response.json();",
+              "  pm.expect(report.status).to.eql('pending');",
+              "  pm.collectionVariables.set('report_id', report.id);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"category\": \"iluminacion\",\n  \"district\": \"Trujillo\",\n  \"location\": \"Referencia privada de prueba\",\n  \"description\": \"Texto privado de prueba para revisar luminarias apagadas.\",\n  \"latitude\": -8.1124,\n  \"longitude\": -79.0321,\n  \"occurred_at\": \"{{incident_time}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/reports"
+      }
+    },
+    {
+      "name": "Comprobar que el reporte es privado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/reports/{{report_id}}"
+      }
+    },
+    {
+      "name": "Consultar mis reportes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().some(report => report.id === pm.collectionVariables.get('report_id'))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/reports/mine"
+      }
+    },
+    {
+      "name": "Comprobar que el vecino no puede moderar",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 403', () => pm.response.to.have.status(403));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/moderation/reports"
+      }
+    },
+    {
+      "name": "Cerrar sesión vecinal",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/auth/logout"
+      }
+    },
+    {
+      "name": "Entrar como moderador de demostración",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().role).to.eql('moderator');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{moderator_email}}\",\n  \"password\": \"{{moderator_password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/auth/login"
+      }
+    },
+    {
+      "name": "Ver cola de moderación",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().some(report => report.id === pm.collectionVariables.get('report_id'))).to.eql(true);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/moderation/reports"
+      }
+    },
+    {
+      "name": "Publicar resumen revisado",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  pm.expect(pm.response.json().status).to.eql('published');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"published\",\n  \"risk\": \"medium\",\n  \"public_summary\": \"Ejemplo de prueba de iluminación deficiente en el sector.\",\n  \"note\": \"Prueba del flujo de moderación.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/moderation/reports/{{report_id}}"
+      }
+    },
+    {
+      "name": "Verificar privacidad de la alerta publicada",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 200', () => pm.response.to.have.status(200));",
+              "pm.test('Datos y permisos esperados', () => {",
+              "  const report = pm.response.json();",
+              "  pm.expect(report.description).to.eql('Ejemplo de prueba de iluminación deficiente en el sector.');",
+              "  pm.expect(report.latitude).to.eql(-8.11);",
+              "  pm.expect(report.longitude).to.eql(-79.03);",
+              "  pm.expect(report).not.to.have.any.keys('location', 'author_id', 'email', 'note');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/reports/{{report_id}}"
+      }
+    },
+    {
+      "name": "Comprobar que la decisión es única",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 409', () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"rejected\",\n  \"note\": \"Intento de revisión duplicada.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/moderation/reports/{{report_id}}"
+      }
+    },
+    {
+      "name": "Guardar una respuesta de otro usuario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"answer\": \"unsure\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{base_url}}/reports/{{report_id}}/vote"
+      }
+    },
+    {
+      "name": "Cerrar sesión del moderador",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Estado 204', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Alerta-Client",
+            "value": "1"
+          }
+        ],
+        "url": "{{base_url}}/auth/logout"
+      }
+    }
+  ]
+}

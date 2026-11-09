@@ -55,7 +55,7 @@ Consulta el [esquema interactivo de FastAPI](http://127.0.0.1:8000/docs) para ve
 
 ## Git y revisión
 
-El repositorio tiene una rama base `main` y una rama de implementación `feat/mvp-ciudadano`. Cuando crees el repositorio en GitHub, puedes subir ambas ramas y abrir un pull request de la segunda hacia `main`.
+El repositorio tiene una rama base `main` y una rama de implementación `feat/mvp-Fabricio`. Cuando crees el repositorio en GitHub, puedes subir ambas ramas y abrir un pull request de la segunda hacia `main`.
 
 ```powershell
 git remote add origin https://github.com/TU-USUARIO/Alerta-Trujillo.git

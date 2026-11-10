@@ -8,15 +8,16 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from pydantic import EmailStr, Field
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from ..catalog import CATEGORIES, DISTRICTS, KNOWLEDGE_CATEGORIES, KNOWLEDGE_KINDS, STAFF_FUNCTIONS
-from ..database import UPLOADS, Account, Evidence, KnowledgeItem, KnowledgeUse, Report, Review, Vote, new_id, now, utc
+from .. import storage
+from ..database import Account, Evidence, KnowledgeItem, KnowledgeUse, Report, Review, Vote, new_id, now, utc
 from ..security import DB, Manager, OptionalAccount, Staff, password_hash
-from ..services import Input, read_limited
+from ..services import UPLOAD_LIMIT, Input, read_limited
 
 router = APIRouter()
 Role = Literal["citizen", "moderator", "manager"]
@@ -122,15 +123,15 @@ async def upload_attachment(item_id: str, file: UploadFile, staff: Staff, db: DB
     extension = ATTACHMENTS.get(file.content_type or "")
     if not extension:
         raise HTTPException(422, "Formatos permitidos: PDF, Word, PowerPoint, Excel, MP4, WebM, PNG o JPG.")
-    data = await read_limited(file, 40 * 1024 * 1024)
+    data = await read_limited(file, min(40 * 1024 * 1024, UPLOAD_LIMIT))
     valid = data[4:8] == b"ftyp" if extension == ".mp4" else any(data.startswith(sign) for sign in SIGNATURES[extension])
     if not valid:
         raise HTTPException(422, "El contenido del archivo no coincide con su formato.")
-    UPLOADS.mkdir(parents=True, exist_ok=True)
-    if item.attachment:
-        (UPLOADS / item.attachment).unlink(missing_ok=True)
+    previous = item.attachment
     item.attachment = new_id() + extension
-    (UPLOADS / item.attachment).write_bytes(data)
+    storage.save(item.attachment, data, file.content_type or "application/octet-stream")
+    if previous:
+        storage.delete(previous)
     item.attachment_type = file.content_type
     item.attachment_name = (file.filename or "archivo" + extension)[-120:]
     item.updated_at = now()
@@ -144,8 +145,7 @@ def download_attachment(item_id: str, db: DB, account: OptionalAccount):
     public = item is not None and item.audience == "public" and item.status == "current"
     if not item or not item.attachment or (not public and (not account or account.role not in STAFF_ROLES)):
         raise HTTPException(404, "No se encontró el archivo.")
-    return FileResponse(UPLOADS / item.attachment, media_type=item.attachment_type, filename=item.attachment_name,
-                        content_disposition_type="inline")
+    return storage.response(item.attachment, item.attachment_type or "application/octet-stream", filename=item.attachment_name, private=not public)
 
 
 # =====================================================================

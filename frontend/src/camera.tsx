@@ -61,7 +61,7 @@ export function CameraCapture({ mode, onCapture, onClose, onFallback }: Props) {
     if (recorder.current?.state === 'recording') { recorder.current.stop(); return; }
     if (!stream.current) return;
     const type = videoType();
-    const media = new MediaRecorder(stream.current, type ? { mimeType: type, videoBitsPerSecond: 2_000_000 } : undefined);
+    const media = new MediaRecorder(stream.current, type ? { mimeType: type, videoBitsPerSecond: 1_100_000, audioBitsPerSecond: 64_000 } : undefined);
     const chunks: Blob[] = [];
     media.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
     media.onstop = () => {

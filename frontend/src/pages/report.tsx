@@ -7,6 +7,7 @@ import { MapView } from '../MapView';
 import { CameraCapture } from '../camera';
 import { SuccessArt } from '../illustrations';
 import { insidePilot, nearestDistrict } from '../pwa';
+import { compressImage, megabytes } from '../media';
 
 function localTime(offsetMinutes = 0) {
   const date = new Date(Date.now() + offsetMinutes * 60_000);
@@ -43,8 +44,8 @@ export function CreateAlert() {
   // Acceso directo: el reporte arranca en la ubicación actual del vecino.
   useEffect(() => { if (position) applyLocation(position); else void locate().then((point) => point && applyLocation(point)); }, []);
   function addCaptured(file: File) {
-    setFiles((current) => [...current, file].slice(0, 3));
     setCamera(null);
+    void accept([file]);
   }
 
   function move(point: Position, recenter = false) {
@@ -52,12 +53,21 @@ export function CreateAlert() {
     setError(''); setPin(point); setUsingGps(false);
     if (recenter) setCenter({ point });
   }
+  const limit = catalog.max_upload_mb * 1024 * 1024;
+  async function accept(chosen: File[]) {
+    const prepared = await Promise.all(chosen.map((file) => compressImage(file)));
+    const tooBig = prepared.find((file) => file.size > limit);
+    if (tooBig) {
+      setError(`«${tooBig.name}» pesa ${megabytes(tooBig.size)} MB y el máximo es ${megabytes(limit)} MB. Graba un video más corto o elige otro archivo.`);
+      return;
+    }
+    setError('');
+    setFiles((current) => [...current, ...prepared].slice(0, 3));
+  }
   function addFiles(event: ChangeEvent<HTMLInputElement>) {
     const chosen = Array.from(event.target.files || []);
     event.target.value = '';
-    const tooBig = chosen.find((file) => file.size > (file.type.startsWith('video/') ? 25 : 8) * 1024 * 1024);
-    if (tooBig) { setError('Cada foto puede pesar hasta 8 MB y cada video hasta 25 MB.'); return; }
-    setFiles((current) => [...current, ...chosen].slice(0, 3));
+    void accept(chosen);
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

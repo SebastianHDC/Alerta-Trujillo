@@ -9,8 +9,9 @@ from sqlalchemy.schema import CreateSchema
 
 from .database import (
     DEMO, DEMO_DB, SCHEMA, Account, Base, Contact, KnowledgeItem, KnowledgeUse, KnowledgeVersion, Notification, Report, Review,
-    UPLOADS, Vote, engine, new_id, now,
+    Vote, engine, new_id, now,
 )
+from . import storage
 from .security import document_hash, password_hash
 
 CONTACTS = [
@@ -53,9 +54,12 @@ def attach_pdf(item: KnowledgeItem, title: str, lines: list[str]):
     draw.text((80, 50), title, fill="white", font=font)
     for index, line in enumerate(lines):
         draw.text((80, 220 + index * 56), line, fill=(19, 35, 58), font=font)
-    UPLOADS.mkdir(parents=True, exist_ok=True)
+    import io
+
+    buffer = io.BytesIO()
+    page.save(buffer, "PDF", resolution=150)
     item.attachment = new_id() + ".pdf"
-    page.save(UPLOADS / item.attachment, "PDF", resolution=150)
+    storage.save(item.attachment, buffer.getvalue(), "application/pdf")
     item.attachment_type, item.attachment_name = "application/pdf", "manual-portal-equipo.pdf"
 
 

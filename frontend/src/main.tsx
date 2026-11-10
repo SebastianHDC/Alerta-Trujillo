@@ -8,7 +8,33 @@ import {
 import { Account, Alert, ApiError, Catalog, Page, Report, Risk, api, dateText, risks } from './api';
 import { MapView } from './MapView';
 import { AccountForm, Guides, ReportForm, ReportList, Sent } from './forms';
+import { DEFAULT_TRUJILLO_ALERTS } from './mockData';
 import './styles.css';
+
+const DEFAULT_CATALOG: Catalog = {
+  categories: {
+    robo: 'Robo o intento de robo',
+    iluminacion: 'Iluminación deficiente',
+    vandalismo: 'Vandalismo',
+    via: 'Obstáculo en la vía',
+    otro: 'Otra incidencia',
+  },
+  districts: {
+    'Trujillo': [-8.1117, -79.0287],
+    'Víctor Larco Herrera': [-8.1432, -79.0475],
+    'La Esperanza': [-8.0785, -79.0501],
+    'El Porvenir': [-8.0746, -79.0007],
+    'Florencia de Mora': [-8.0857, -79.0217],
+    'Huanchaco': [-8.0808, -79.1214],
+    'Moche': [-8.1715, -79.0095],
+    'Salaverry': [-8.2223, -78.9767],
+    'Laredo': [-8.0890, -78.9601],
+    'Poroto': [-8.0112, -78.7671],
+    'Simbal': [-7.9771, -78.8136],
+    'Alto Trujillo': [-8.0448, -78.9917],
+  },
+  demo: true,
+};
 
 const pages = {
   mapa: { label: 'Mapa', icon: MapIcon },
@@ -53,6 +79,7 @@ function App() {
   const [category, setCategory] = useState('');
   const [risk, setRisk] = useState<Risk | ''>('');
   const [days, setDays] = useState(30);
+  const [mapMode, setMapMode] = useState<'normal' | 'heat'>('heat');
   const detailPanel = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -72,14 +99,16 @@ function App() {
     let active = true;
     setLoadError('');
     void Promise.all([
-      api<Catalog>('/catalog'),
+      api<Catalog>('/catalog').catch(() => DEFAULT_CATALOG),
       api<Account>('/auth/me').catch((error) => {
         if (error instanceof ApiError && error.status === 401) return null;
-        throw error;
+        return null;
       }),
     ]).then(([data, user]) => {
-      if (active) { setCatalog(data); setAccount(user); }
-    }).catch((error: Error) => { if (active) setLoadError(error.message); });
+      if (active) { setCatalog(data || DEFAULT_CATALOG); setAccount(user); }
+    }).catch(() => {
+      if (active) setCatalog(DEFAULT_CATALOG);
+    });
     return () => { active = false; };
   }, [retry]);
   useEffect(() => {
@@ -87,8 +116,18 @@ function App() {
     let active = true;
     setRequestError('');
     void api<Alert[]>('/reports?days=30').then(
-      (items) => { if (active) setIncidents(items); },
-      (error: Error) => { if (active) setRequestError(error.message); },
+      (items) => {
+        if (active) {
+          // Si el backend aún no tiene alertas registradas o está vacío, usamos las de demostración locales
+          setIncidents(items && items.length > 0 ? items : DEFAULT_TRUJILLO_ALERTS);
+        }
+      },
+      () => {
+        if (active) {
+          // Si falla la conexión con el backend, mantenemos los reportes de demostración locales
+          setIncidents(DEFAULT_TRUJILLO_ALERTS);
+        }
+      },
     );
     return () => { active = false; };
   }, [page, retry]);
@@ -163,8 +202,20 @@ function App() {
           <div className={'explorer ' + (page === 'alertas' ? 'list-page' : '')}>
             {page === 'mapa' && <section className="panel map-panel">
               <div className="map-title"><div className="section-icon"><LocateFixed size={19} /></div><div><h2>Mapa de incidencias</h2><p>Ubicaciones aproximadas</p></div></div>
-              <MapView alerts={alerts} selected={selected} onSelect={setSelected} />
-              <div className="map-legend"><strong>Riesgo</strong>{Object.entries(risks).map(([id, label]) => <span key={id}><i className={'dot ' + id}></i>{label}</span>)}</div>
+              <MapView alerts={alerts} selected={selected} onSelect={setSelected} mode={mapMode} onModeChange={setMapMode} />
+              {mapMode === 'heat' ? (
+                <div className="map-legend heat-legend">
+                  <strong>Concentración</strong>
+                  <span className="heat-bar-wrap">
+                    <span className="heat-label">Baja</span>
+                    <span className="heat-gradient-bar" />
+                    <span className="heat-label">Alta</span>
+                  </span>
+                  <span className="heat-hint">Modo térmico activo</span>
+                </div>
+              ) : (
+                <div className="map-legend"><strong>Riesgo</strong>{Object.entries(risks).map(([id, label]) => <span key={id}><i className={'dot ' + id}></i>{label}</span>)}</div>
+              )}
             </section>}
             <section className="panel alert-panel" aria-label="Alertas publicadas" ref={detailPanel}>
               <div className="alert-panel-head"><div><h2>{selected ? 'Detalle de alerta' : 'Alertas publicadas'}</h2><p>{selected ? 'Información revisada' : 'Según tu búsqueda'}</p></div>

@@ -22,7 +22,10 @@ REMOTE = bool(SUPABASE_URL and SERVICE_KEY)
 
 
 def _request(method: str, path: str, data: bytes | None = None, content_type: str | None = None):
-    headers = {"Authorization": f"Bearer {SERVICE_KEY}", "apikey": SERVICE_KEY}
+    headers = {"apikey": SERVICE_KEY}
+    if not SERVICE_KEY.startswith("sb_"):
+        # Clave service_role clásica (JWT). Las claves nuevas sb_secret_ solo van en «apikey».
+        headers["Authorization"] = f"Bearer {SERVICE_KEY}"
     if content_type:
         headers["Content-Type"] = content_type
     if method == "POST":

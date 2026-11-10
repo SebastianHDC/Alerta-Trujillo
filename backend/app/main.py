@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .catalog import CATEGORIES, DISTRICTS, KNOWLEDGE_CATEGORIES, KNOWLEDGE_KINDS, REVIEW_CHECKLIST, STAFF_FUNCTIONS
-from .database import DEMO
+from .database import DEMO, MAX_UPLOAD_MB
 from .routes import auth, citizen, modules, staff
 
 
@@ -56,6 +56,7 @@ def catalog():
         "categories": CATEGORIES, "districts": DISTRICTS, "demo": DEMO,
         "knowledge_categories": KNOWLEDGE_CATEGORIES, "knowledge_kinds": KNOWLEDGE_KINDS, "checklist": REVIEW_CHECKLIST,
         "functions": {key: value["label"] for key, value in STAFF_FUNCTIONS.items()},
+        "max_upload_mb": MAX_UPLOAD_MB,
     }
 
 

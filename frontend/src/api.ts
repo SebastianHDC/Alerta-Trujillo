@@ -10,6 +10,7 @@ export type Catalog = {
   knowledge_kinds: Record<string, string>;
   checklist: Record<string, string>;
   functions: Record<string, string>;
+  max_upload_mb: number;
 };
 export type Account = { id: string; name: string; email: string; role: Role; district: string | null; function?: string | null };
 export type Alert = {

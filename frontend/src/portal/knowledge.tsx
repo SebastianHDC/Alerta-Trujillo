@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, CheckCircle2, ClipboardList, FileText, HelpCirc
 import { api, ago, message } from '../api';
 import { Empty, ErrorText } from '../components';
 import { go, useApp } from '../context';
+import { compressImage, megabytes } from '../media';
 
 type Item = {
   id: string; title: string; category: string; kind: string; audience: 'public' | 'internal'; status: 'draft' | 'review' | 'current' | 'obsolete';
@@ -102,9 +103,15 @@ export function KnowledgeEditor({ id }: { id: string }) {
     finally { setBusy(false); }
   }
   async function upload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
+    const picked = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
+    if (!picked) return;
+    const file = await compressImage(picked);
+    const limit = catalog.max_upload_mb * 1024 * 1024;
+    if (file.size > limit) {
+      setError(`El archivo pesa ${megabytes(file.size)} MB y el máximo es ${megabytes(limit)} MB. Para videos largos usa un enlace de YouTube.`);
+      return;
+    }
     const form = new FormData();
     form.append('file', file);
     setError(''); setNotice('Subiendo archivo…');

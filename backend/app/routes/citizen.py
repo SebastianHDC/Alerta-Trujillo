@@ -2,14 +2,14 @@ from datetime import timedelta
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile
-from fastapi.responses import FileResponse
 from pydantic import AwareDatetime, Field, model_validator
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import insert as postgres_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from ..catalog import CATEGORIES, DISTRICTS, POINTS_VERIFIED_REPORT
-from ..database import DEMO, UPLOADS, Contact, Evidence, KnowledgeItem, Notification, Report, Vote, now, utc
+from .. import storage
+from ..database import DEMO, Contact, Evidence, KnowledgeItem, Notification, Report, Vote, now, utc
 from ..security import DB, CurrentAccount, OptionalAccount
 from ..services import (
     MAX_EVIDENCE, VISIBLE, Input, notify, private_view, public_photo, public_view, ranking, store_evidence, vote_counts,
@@ -87,7 +87,7 @@ def alert_photo(report_id: str, db: DB):
     if not evidence_id:
         raise HTTPException(404, "La alerta no tiene una foto pública.")
     evidence = db.get(Evidence, evidence_id)
-    return FileResponse(UPLOADS / evidence.stored_name, media_type=evidence.content_type)
+    return storage.response(evidence.stored_name, evidence.content_type)
 
 
 @router.put("/alerts/{report_id}/vote", status_code=204)
@@ -136,7 +136,7 @@ def evidence_file(evidence_id: str, account: CurrentAccount, db: DB):
     report = db.get(Report, evidence.report_id) if evidence else None
     if not report or (report.author_id != account.id and account.role not in {"moderator", "manager"}):
         raise HTTPException(404, "No se encontró la evidencia.")
-    return FileResponse(UPLOADS / evidence.stored_name, media_type=evidence.content_type)
+    return storage.response(evidence.stored_name, evidence.content_type, private=True)
 
 
 @router.get("/reports/mine")

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import (
     JSON, CheckConstraint, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, event,
 )
+from sqlalchemy.pool import NullPool
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,9 +20,19 @@ if DEMO:
 elif not DATABASE_URL or not DATABASE_URL.startswith("postgresql+psycopg://"):
     raise RuntimeError("Configura DATABASE_URL con PostgreSQL o ejecuta APP_MODE=demo.")
 
-UPLOADS = Path(os.getenv("UPLOADS_DIR") or ROOT / "uploads")
+SERVERLESS = bool(os.getenv("VERCEL"))
+UPLOADS = Path(os.getenv("UPLOADS_DIR") or ("/tmp/uploads" if SERVERLESS else ROOT / "uploads"))
+# Límite por archivo: Vercel acepta cuerpos de hasta 4,5 MB por petición.
+MAX_UPLOAD_MB = float(os.getenv("MAX_UPLOAD_MB") or (4 if SERVERLESS else 25))
 SCHEMA = "alerta_trujillo"
-engine = create_engine(DATABASE_URL, pool_pre_ping=True, hide_parameters=True)
+engine_options: dict = dict(pool_pre_ping=True, hide_parameters=True)
+if not DEMO:
+    # El pooler de Supabase en modo transacción no admite sentencias preparadas.
+    engine_options["connect_args"] = {"prepare_threshold": None}
+if SERVERLESS:
+    # Cada invocación es efímera: no conservar conexiones abiertas entre peticiones.
+    engine_options["poolclass"] = NullPool
+engine = create_engine(DATABASE_URL, **engine_options)
 if not DEMO:
     engine = engine.execution_options(schema_translate_map={None: SCHEMA})
 if DEMO:

@@ -10,11 +10,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .catalog import POINTS_VERIFIED_REPORT, POINTS_VOTE, POINTS_VOTE_MATCH
-from .database import UPLOADS, Account, Evidence, KnowledgeItem, Notification, Report, Vote, new_id, utc
+from .database import MAX_UPLOAD_MB, Account, Evidence, KnowledgeItem, Notification, Report, Vote, new_id, utc
+from . import storage
 
 VISIBLE = ("community", "verified")
-PHOTO_LIMIT = 8 * 1024 * 1024
-VIDEO_LIMIT = 25 * 1024 * 1024
+UPLOAD_LIMIT = int(MAX_UPLOAD_MB * 1024 * 1024)
+PHOTO_LIMIT = min(8 * 1024 * 1024, UPLOAD_LIMIT)
+VIDEO_LIMIT = min(25 * 1024 * 1024, UPLOAD_LIMIT)
 MAX_EVIDENCE = 3
 
 
@@ -107,12 +109,11 @@ async def read_limited(upload: UploadFile, limit: int) -> bytes:
     while chunk := await upload.read(1024 * 1024):
         data += chunk
         if len(data) > limit:
-            raise HTTPException(413, f"El archivo supera el límite de {limit // (1024 * 1024)} MB.")
+            raise HTTPException(413, f"El archivo supera el límite de {limit / (1024 * 1024):g} MB.")
     return bytes(data)
 
 
 async def store_evidence(report: Report, upload: UploadFile) -> Evidence:
-    UPLOADS.mkdir(parents=True, exist_ok=True)
     content_type = upload.content_type or ""
     if content_type.startswith("image/"):
         raw = await read_limited(upload, PHOTO_LIMIT)
@@ -138,7 +139,7 @@ async def store_evidence(report: Report, upload: UploadFile) -> Evidence:
     else:
         raise HTTPException(422, "Solo se aceptan fotos o videos.")
     stored_name = new_id() + extension
-    (UPLOADS / stored_name).write_bytes(data)
+    storage.save(stored_name, data, stored_type)
     return Evidence(report_id=report.id, kind=kind, stored_name=stored_name, content_type=stored_type, size=len(data))
 
 

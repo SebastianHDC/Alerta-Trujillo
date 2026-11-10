@@ -157,6 +157,50 @@ La aplicación React consume rutas del mismo origen bajo `/api`. En desarrollo, 
 
 [Conexión a PostgreSQL en Supabase](https://supabase.com/docs/guides/database/connecting-to-postgres)
 
+## Desplegar en Vercel
+
+El repositorio se despliega como **un solo proyecto**: Vercel compila la interfaz (`frontend/dist`) y publica FastAPI como función Python en `/api` (`api/index.py`). Todo queda en el mismo dominio HTTPS, que es lo que necesitan la cookie de sesión, la cámara, la ubicación y la instalación de la PWA. La configuración está en `vercel.json`.
+
+En Vercel no hay disco persistente: la base de datos debe ser **Supabase (Postgres)** y las evidencias y adjuntos se guardan en **Supabase Storage**. El modo demo con SQLite es solo para uso local.
+
+### 1. Preparar Supabase (una vez)
+
+1. Aplica las migraciones de `supabase/migrations/` (con la CLI: `supabase db push`). Además del esquema, crean el bucket privado `alerta-trujillo` para los archivos.
+2. En **Connect**, copia la cadena del **Transaction pooler** (puerto 6543), recomendada para funciones serverless. Cambia el prefijo `postgresql://` por `postgresql+psycopg://` y añade `?sslmode=require` al final.
+3. En **Project Settings → API**, copia la URL del proyecto y la clave **service_role**. Esa clave da acceso total: solo va en las variables de entorno del backend, nunca en el frontend ni en el repositorio.
+
+### 2. Crear el proyecto en Vercel
+
+1. En vercel.com, **Add New → Project** e importa el repositorio de GitHub. Deja la carpeta raíz del repositorio como *Root Directory*; Vercel toma la compilación y la función desde `vercel.json`.
+2. En **Settings → Environment Variables**, define (para *Production* y *Preview*):
+
+| Variable | Valor |
+| --- | --- |
+| `APP_MODE` | `production` |
+| `DATABASE_URL` | `postgresql+psycopg://…pooler.supabase.com:6543/postgres?sslmode=require` |
+| `DOCUMENT_PEPPER` | Un secreto largo y aleatorio. No lo cambies después de registrar cuentas. |
+| `SUPABASE_URL` | `https://<tu-proyecto>.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave service_role de Supabase |
+| `STORAGE_BUCKET` | `alerta-trujillo` (opcional, es el valor por defecto) |
+
+3. Pulsa **Deploy**. Comprueba `https://<tu-dominio>/api/health`: debe responder `{"status":"ok","mode":"production"}`.
+
+### 3. Crear la primera cuenta de gestión
+
+Desde tu computadora, con las mismas `DATABASE_URL` y `DOCUMENT_PEPPER` en `backend/.env` y `APP_MODE=production`:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.manage create-manager tu-correo@ejemplo.com "Tu nombre"
+```
+
+Las demás cuentas del equipo se crean desde el portal, en **M2 · Usuarios y roles**.
+
+### Límites del despliegue en Vercel
+
+- Vercel acepta peticiones de hasta 4,5 MB, así que el límite por archivo es de **4 MB** (`MAX_UPLOAD_MB`). La app reduce las fotos a 1600 px antes de subirlas y graba los videos con menor calidad (unos 3 MB por 20 s). Para videos largos de la base de conocimiento, usa un enlace de YouTube.
+- Sin `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`, las subidas responden con un error claro en lugar de guardar archivos que se perderían.
+
 ## API y Postman
 
 Importa `postman/Alerta-Trujillo.postman_collection.json` y ejecuta la colección en orden contra la API local con los datos de demostración. La colección registra una cuenta de prueba distinta en cada ejecución, envía un reporte, verifica permisos, lo pasa por la lista de control, lo publica como «Sin verificar», comprueba qué información se hace pública y lo verifica. Postman conserva la cookie de sesión. Las solicitudes que cambian datos requieren el encabezado `X-Alerta-Client: 1`.

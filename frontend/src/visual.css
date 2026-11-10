@@ -1,0 +1,145 @@
+/* ================= PWA, ilustraciones y cámara ================= */
+.phone { padding-top: env(safe-area-inset-top); }
+.bottom-nav { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+
+/* Parallax: cada capa se desplaza según --depth */
+.parallax { --px: 0; --py: 0; position: relative; touch-action: pan-y; }
+.parallax .layer { transform: translate(calc(var(--px) * var(--depth, 0) * 1px), calc(var(--py) * var(--depth, 0) * 1px)); transition: transform .25s ease-out; }
+.art { width: 100%; max-width: 340px; margin: 0 auto; }
+.art svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+/* Silueta de la ciudad */
+.skyline { display: block; width: 100%; }
+.skyline path, .skyline circle { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.skyline-line { stroke: rgba(255, 255, 255, .55); }
+.skyline-line .sky-back path { stroke: rgba(255, 255, 255, .25); }
+.skyline-line .window { stroke: #ffd166; animation: twinkle 3s ease-in-out infinite; }
+.skyline-color .sky-back path { fill: #c9daf0; stroke: none; }
+.skyline-color .sky-front path, .skyline-color .sky-front circle { fill: #f7efe2; stroke: #0d3a6b; }
+.skyline-color .sky-front .balcony { fill: #8d5a3b; stroke: #5c3a24; }
+.skyline-color .sky-front .window { fill: #ffd166; }
+.skyline-color .sky-front .palm { fill: none; stroke: #2e8b3e; stroke-width: 2.4; }
+.skyline-color .ground { stroke: #0d3a6b; }
+.skyline-silhouette path, .skyline-silhouette circle { fill: rgba(9, 26, 46, .28); stroke: none; }
+.skyline-silhouette .sky-front .palm { fill: none; stroke: rgba(9, 26, 46, .28); stroke-width: 2.4; }
+.skyline-silhouette .ground { stroke: none; }
+
+/* Animaciones de las escenas */
+.live-pin path { stroke: #fff; stroke-width: 2; }
+.live-pin.high { color: #e53935; } .live-pin.medium { color: #fb8c00; } .live-pin.low { color: #43a047; }
+.live-pin.high path { fill: #e53935; } .live-pin.medium path { fill: #fb8c00; } .live-pin.low path { fill: #43a047; }
+.live-pin .pulse { fill: currentColor; opacity: .25; transform-box: fill-box; transform-origin: center; animation: pulse 2.2s ease-out infinite; }
+.live-pin.tap { cursor: pointer; outline: none; }
+.live-pin.tap:focus-visible path { stroke: #13233a; stroke-width: 3; }
+.tip { animation: fade .2s ease-out; }
+.sun { transform-box: fill-box; transform-origin: center; animation: breathe 5s ease-in-out infinite; }
+.cloud { animation: drift 14s linear infinite alternate; }
+.signal { fill: none; stroke: #9ec1ec; stroke-width: 3; transform-box: fill-box; transform-origin: center; animation: pulse 2.6s ease-out infinite; }
+.signal.s2 { animation-delay: 1.3s; }
+.bounce { animation: bounce 1.6s ease-in-out infinite; }
+.float { animation: float 4s ease-in-out infinite; }
+.sweep { transform-origin: 160px 120px; animation: spin 4s linear infinite; }
+.pulse-soft { transform-box: fill-box; transform-origin: center; animation: breathe 2.4s ease-in-out infinite; }
+.pop { transform-box: fill-box; transform-origin: center; animation: pop .5s cubic-bezier(.2, 1.6, .4, 1) both; }
+.draw { stroke-dasharray: 80; stroke-dashoffset: 80; animation: draw .6s .35s ease-out forwards; }
+.twinkle { animation: twinkle 1.8s ease-in-out infinite; }
+@keyframes pulse { 0% { transform: scale(.4); opacity: .45; } 100% { transform: scale(1.6); opacity: 0; } }
+@keyframes breathe { 50% { transform: scale(1.08); } }
+@keyframes drift { to { transform: translateX(40px); } }
+@keyframes bounce { 50% { transform: translateY(-8px); } }
+@keyframes float { 50% { transform: translateY(-6px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes twinkle { 50% { opacity: .3; } }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* Splash */
+.splash { position: relative; overflow: hidden; }
+.splash-badge { animation: pop .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+.splash h1 { animation: rise .5s .15s both; }
+.splash p { animation: rise .5s .3s both; }
+.splash-loader { display: flex; gap: 6px; margin-top: 8px; }
+.splash-loader i { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: twinkle 1s ease-in-out infinite; }
+.splash-loader i:nth-child(2) { animation-delay: .2s; }
+.splash-loader i:nth-child(3) { animation-delay: .4s; }
+.splash-city { position: absolute; left: 0; right: 0; bottom: 0; height: 34vh; }
+
+/* Onboarding */
+.onboarding { user-select: none; }
+.onboarding-art { flex: 1; display: grid; place-items: center; background: none; min-height: 260px; animation: rise .45s ease-out; }
+.onboarding-copy { display: flex; flex-direction: column; gap: 10px; animation: rise .45s .08s both; }
+.dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 50%; background: #c7d2df; transition: width .2s; }
+.dots button.on { background: var(--navy); width: 24px; border-radius: 4px; }
+
+/* Encabezados con la ciudad */
+.brand-card { position: relative; overflow: hidden; padding-bottom: 46px; }
+.brand-city { position: absolute; left: 0; right: 0; bottom: 0; height: 52px; }
+.profile-head { position: relative; overflow: hidden; padding-bottom: 40px; }
+.profile-head > *:not(.head-city) { position: relative; z-index: 1; }
+.head-city { position: absolute; left: 0; right: 0; bottom: 0; height: 46px; opacity: .35; }
+
+/* Portada del detalle */
+.category-scene { position: relative; height: 100%; overflow: hidden; display: grid; place-items: center; }
+.category-scene .layer { position: absolute; }
+.scene-sky { inset: -20px; }
+.category-scene.high .scene-sky { background: radial-gradient(circle at 70% 20%, #ffd7d2, #f6a59c 70%); }
+.category-scene.medium .scene-sky { background: radial-gradient(circle at 70% 20%, #ffe9cc, #f8bd7c 70%); }
+.category-scene.low .scene-sky { background: radial-gradient(circle at 70% 20%, #e0f3e2, #9fd3a6 70%); }
+.scene-city { left: -20px; right: -20px; bottom: -4px; height: 110px; }
+.scene-city .skyline { height: 100%; }
+.scene-badge { width: 92px; height: 92px; border-radius: 28px; background: #fff; display: grid; place-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); }
+.category-scene.high .scene-badge { color: var(--high); }
+.category-scene.medium .scene-badge { color: var(--medium); }
+.category-scene.low .scene-badge { color: var(--low); }
+.scene-pulse { position: absolute; inset: 0; border-radius: 28px; border: 3px solid currentColor; animation: pulse 2.2s ease-out infinite; }
+
+/* Estados vacíos y éxito */
+.empty-art { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; color: var(--muted); text-align: center; font-size: .9rem; }
+.empty-art svg { width: 140px; }
+.success-art { width: 180px; margin-top: 12px; }
+
+/* Ubicación */
+.gps-chip { display: inline-flex; gap: 6px; align-items: center; background: #e9effc; color: #2353a8; border-radius: 999px; padding: 5px 12px; font-size: .8rem; font-weight: 600; width: fit-content; }
+.map-count.nearby { border: 0; color: var(--navy); font-weight: 700; display: inline-flex; gap: 6px; align-items: center; }
+
+/* Instalación */
+.install-banner { position: absolute; left: 10px; right: 10px; bottom: 50px; z-index: 465; background: #fff; border-radius: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .18); padding: 10px; display: flex; gap: 10px; align-items: center; animation: rise .4s ease-out; }
+.install-banner img { border-radius: 9px; }
+.install-banner div { flex: 1; display: flex; flex-direction: column; font-size: .82rem; }
+.install-banner small { color: var(--muted); }
+.install-banner .primary { padding: 8px 12px; }
+.modal-close.static { position: static; flex: none; }
+.menu-list .install-item { color: var(--navy); font-weight: 600; }
+.web-hint a { font-weight: 700; }
+
+/* Evidencias */
+.thumbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.thumb { position: relative; margin: 0; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #000; animation: pop .3s ease-out; }
+.thumb img, .thumb video { width: 100%; height: 100%; object-fit: cover; }
+.thumb button { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .6); color: #fff; display: grid; place-items: center; }
+.thumb-tag { position: absolute; left: 4px; bottom: 4px; background: rgba(0, 0, 0, .6); color: #fff; border-radius: 6px; padding: 2px 5px; display: flex; }
+
+/* Cámara integrada */
+.camera { position: fixed; inset: 0; z-index: 1500; background: #000; color: #fff; display: flex; flex-direction: column; }
+.camera video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.camera video.mirror { transform: scaleX(-1); }
+.camera-flash { position: absolute; inset: 0; background: #fff; animation: twinkle .18s; }
+.camera-top { position: relative; display: flex; justify-content: space-between; align-items: center; padding: calc(14px + env(safe-area-inset-top)) 14px 14px; background: linear-gradient(rgba(0, 0, 0, .55), transparent); }
+.camera-top button { width: 42px; height: 42px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .45); color: #fff; display: grid; place-items: center; }
+.rec { display: inline-flex; gap: 6px; align-items: center; background: #e53935; border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: .85rem; }
+.camera-hint { position: relative; margin: 0 auto; background: rgba(0, 0, 0, .45); border-radius: 999px; padding: 6px 14px; font-size: .8rem; }
+.camera-bottom { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around; align-items: center; padding: 22px 16px calc(26px + env(safe-area-inset-bottom)); background: linear-gradient(transparent, rgba(0, 0, 0, .6)); }
+.link.light { color: #fff; }
+.camera-spacer { width: 60px; }
+.shutter { width: 74px; height: 74px; border-radius: 50%; border: 5px solid #fff; background: rgba(255, 255, 255, .2); color: #fff; display: grid; place-items: center; }
+.shutter:active { transform: scale(.94); }
+.shutter.video.on { background: #e53935; border-color: #ffcdd2; }
+.camera-error { position: relative; margin: auto 20px; background: rgba(0, 0, 0, .7); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) {
+  .parallax .layer, .live-pin .pulse, .sun, .cloud, .signal, .bounce, .float, .sweep, .pulse-soft, .twinkle, .skyline-line .window,
+  .scene-pulse, .splash-loader i, .onboarding-art, .onboarding-copy { animation: none !important; transition: none !important; }
+  .parallax .layer { transform: none !important; }
+}

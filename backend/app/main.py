@@ -1,3 +1,4 @@
+import mimetypes
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request
@@ -37,6 +38,10 @@ async def security_headers(request: Request, call_next):
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    # Cámara y ubicación solo para este origen (el informe exige minimizar datos).
+    response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=(self)"
+    if request.url.path == "/sw.js":
+        response.headers["Cache-Control"] = "no-cache"
     return response
 
 
@@ -57,6 +62,7 @@ api.include_router(auth.router)
 api.include_router(citizen.router)
 api.include_router(staff.router)
 app.include_router(api)
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 if dist.is_dir():
     app.mount("/", StaticFiles(directory=dist, html=True), name="web")

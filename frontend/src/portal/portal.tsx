@@ -5,6 +5,7 @@ import { CategoryIcon, Empty, ErrorText, RiskBadge, StatusBadge } from '../compo
 import { go, useApp } from '../context';
 import { MapView } from '../MapView';
 import { KnowledgeEditor, KnowledgeList, useCurrentKnowledge } from './knowledge';
+import { isStandalone } from '../pwa';
 
 export function Portal({ section, id }: { section: string; id?: string }) {
   const { account } = useApp();
@@ -19,11 +20,14 @@ export function Portal({ section, id }: { section: string; id?: string }) {
   const current = section ? 'portal/' + section : 'portal';
   return <div className="portal">
     <aside className="portal-nav">
-      <div className="portal-brand"><Shield size={20} /><div><strong>Alerta Trujillo</strong><small>Portal del equipo</small></div></div>
+      <div className="portal-brand"><Shield size={20} /><div><strong>Alerta Trujillo</strong><small>Portal del equipo · modo web</small></div></div>
       <nav>{links.map(([path, label, Icon]) => <a key={path} href={'#/' + path} className={current === path ? 'current' : ''} aria-current={current === path ? 'page' : undefined}><Icon size={18} />{label}</a>)}</nav>
       <div className="portal-user"><strong>{account.name}</strong><small>{roles[account.role]}</small><a href="#/mapa"><ArrowLeft size={14} /> Volver a la app</a></div>
     </aside>
     <main className="portal-main">
+      {(isStandalone() || window.matchMedia('(max-width: 700px)').matches) && <div className="hint web-hint">
+        El portal del equipo está pensado para usarse en modo web, en una computadora. <a href="/#/portal" target="_blank" rel="noreferrer">Abrir en el navegador</a>
+      </div>}
       {section === '' && <Dashboard />}
       {section === 'revision' && <ReviewQueue />}
       {section === 'conocimiento' && (id ? <KnowledgeEditor id={id} /> : <KnowledgeList />)}

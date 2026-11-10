@@ -1,39 +1,63 @@
 import { FormEvent, ReactElement, useEffect, useState } from 'react';
 import {
-  AlertTriangle, Award, BookOpen, CheckCircle2, ChevronRight, Eye, EyeOff, Flame, LayoutDashboard, LogOut, Mail, MapPinned, Megaphone,
-  Phone, ShieldCheck, Siren, Star, Trophy, UserRound, Users, XCircle,
+  AlertTriangle, Award, BookOpen, CheckCircle2, ChevronRight, Download, Eye, EyeOff, Flame, LayoutDashboard, LocateFixed, LogOut, Mail,
+  Phone, Share, ShieldCheck, Siren, Star, Trophy, UserRound, XCircle,
 } from 'lucide-react';
 import { Account, Report, api, ago, dateText, message, roles } from '../api';
 import { AppBar, CategoryIcon, Empty, ErrorText, Logo, StatusBadge } from '../components';
 import { go, useApp } from '../context';
+import { CityLiveArt, CommunityArt, EmptyArt, PhoneReportArt, RadarArt, Skyline } from '../illustrations';
+import { isStandalone, useInstall } from '../pwa';
 
 // ---------- Splash y onboarding ----------
 
 export function Splash() {
   return <div className="splash" role="status" aria-label="Cargando Alerta Trujillo">
-    <Logo size={42} />
+    <div className="splash-badge"><Logo size={42} /></div>
     <h1>ALERTA TRUJILLO</h1>
     <p>Seguridad ciudadana en tiempo real</p>
+    <div className="splash-loader" aria-hidden><i /><i /><i /></div>
+    <Skyline variant="line" className="splash-city" />
   </div>;
 }
 
 const slides = [
-  { icon: MapPinned, title: 'Mantente informado en tiempo real', text: 'Visualiza reportes ciudadanos cercanos y conoce las zonas con mayor actividad antes de desplazarte.' },
-  { icon: Megaphone, title: 'Reporta incidentes rápidamente', text: 'Genera alertas georreferenciadas sobre robos, hurtos, vandalismo o situaciones sospechosas en menos de un minuto.' },
-  { icon: Users, title: 'La seguridad comienza con la participación', text: 'Valida reportes de otros vecinos. Un equipo de moderación revisa cada alerta antes de darla por verificada.' },
+  { art: CityLiveArt, title: 'Mantente informado en tiempo real', text: 'Visualiza reportes ciudadanos cercanos y conoce las zonas con mayor actividad antes de desplazarte.' },
+  { art: PhoneReportArt, title: 'Reporta incidentes rápidamente', text: 'Genera alertas georreferenciadas con foto o video en menos de un minuto, directamente desde la cámara.' },
+  { art: CommunityArt, title: 'La seguridad comienza con la participación', text: 'Valida reportes de otros vecinos (toca los pines). Un equipo de moderación revisa cada alerta antes de darla por verificada.' },
+  { art: RadarArt, title: 'Activa tu ubicación', text: 'Te mostramos las alertas cercanas y ubicamos tus reportes automáticamente. Solo la usamos mientras usas la app y nunca la publicamos exacta.' },
 ];
 
 export function Onboarding({ onDone }: { onDone: () => void }) {
+  const { locate } = useApp();
   const [index, setIndex] = useState(0);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [asking, setAsking] = useState(false);
   const slide = slides[index];
-  const Icon = slide.icon;
-  return <div className="onboarding">
+  const Art = slide.art;
+  const last = index === slides.length - 1;
+  const goTo = (next: number) => setIndex(Math.max(0, Math.min(slides.length - 1, next)));
+  async function enableLocation() {
+    setAsking(true);
+    await locate();
+    setAsking(false);
+    onDone();
+  }
+  return <div className="onboarding" onPointerDown={(event) => setStartX(event.clientX)}
+    onPointerUp={(event) => { if (startX !== null && Math.abs(event.clientX - startX) > 50) goTo(index + (event.clientX < startX ? 1 : -1)); setStartX(null); }}>
     <button className="skip" onClick={onDone}>Saltar</button>
-    <div className="onboarding-art"><Icon size={84} strokeWidth={1.4} /></div>
-    <h1>{slide.title}</h1>
-    <p>{slide.text}</p>
-    <div className="dots" aria-label={`Paso ${index + 1} de ${slides.length}`}>{slides.map((_, i) => <i key={i} className={i === index ? 'on' : ''} />)}</div>
-    <button className="primary block" onClick={() => index < slides.length - 1 ? setIndex(index + 1) : onDone()}>{index < slides.length - 1 ? 'Siguiente' : 'Comenzar'}</button>
+    <div className="onboarding-art" key={index}><Art /></div>
+    <div className="onboarding-copy" key={'c' + index}>
+      <h1>{slide.title}</h1>
+      <p>{slide.text}</p>
+    </div>
+    <div className="dots" role="tablist" aria-label={`Paso ${index + 1} de ${slides.length}`}>
+      {slides.map((item, i) => <button key={i} role="tab" aria-selected={i === index} aria-label={item.title} className={i === index ? 'on' : ''} onClick={() => goTo(i)} />)}
+    </div>
+    {last ? <>
+      <button className="primary block" disabled={asking} onClick={() => void enableLocation()}><LocateFixed size={18} /> {asking ? 'Esperando permiso…' : 'Permitir ubicación'}</button>
+      <button className="link center" onClick={onDone}>Ahora no</button>
+    </> : <button className="primary block" onClick={() => goTo(index + 1)}>Siguiente</button>}
   </div>;
 }
 
@@ -62,7 +86,7 @@ export function Login() {
   }
   return <div className="screen auth-screen">
     <div className="content">
-      <div className="brand-card"><Logo size={30} /><div><strong>ALERTA</strong><strong>TRUJILLO</strong></div></div>
+      <div className="brand-card"><Logo size={30} /><div><strong>ALERTA</strong><strong>TRUJILLO</strong></div><Skyline variant="line" className="brand-city" /></div>
       <form className="card" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void login(Object.fromEntries(new FormData(event.currentTarget))); }}>
         <h1 className="card-title">Inicia sesión</h1>
         <label className="field">Correo electrónico <div className="input-icon left"><Mail size={16} /><input name="email" type="email" autoComplete="email" required placeholder="ejemplo@gmail.com" /></div></label>
@@ -167,6 +191,7 @@ export function ProfilePage() {
   const initials = account.name.split(/\s+/).map((word) => word[0]).join('').slice(0, 2).toUpperCase();
   return <div className="screen">
     <header className="profile-head">
+      <Skyline variant="line" className="head-city" />
       <span className="avatar">{initials}</span>
       <div><strong>{account.name}</strong><small>{account.district ? `${account.district}, Trujillo` : 'Trujillo'}</small>
         <span className="pill"><ShieldCheck size={13} /> {account.role === 'citizen' ? (profile && profile.sent + profile.votes > 0 ? 'Ciudadano activo' : 'Ciudadano') : roles[account.role]}</span></div>
@@ -185,7 +210,7 @@ export function ProfilePage() {
       </section>
       <section className="card">
         <h2 className="card-title">Actividad reciente</h2>
-        {profile && !profile.activity.length && <Empty>Aún no tienes actividad.</Empty>}
+        {profile && !profile.activity.length && <EmptyArt text="Aún no tienes actividad. Valida una alerta cercana para empezar a sumar puntos." />}
         <ul className="activity">
           {profile?.activity.map((item, index) => <li key={index}>
             {item.kind === 'vote' ? <Flame size={16} className="accent" /> : item.status === 'verified' ? <CheckCircle2 size={16} className="ok" /> : item.status === 'discarded' || item.status === 'rejected' ? <XCircle size={16} className="bad" /> : <Siren size={16} className="warn" />}
@@ -197,7 +222,7 @@ export function ProfilePage() {
       </section>
       <section className="card">
         <h2 className="card-title">Mis reportes</h2>
-        {reports && !reports.length && <Empty>Todavía no has enviado reportes.</Empty>}
+        {reports && !reports.length && <EmptyArt text="Todavía no has enviado reportes." />}
         <div className="stack">{reports?.map((report) => <article key={report.id} className="mini-report">
           <CategoryIcon category={report.category} size={18} />
           <div><strong>{catalog.categories[report.category]}</strong><small className="muted">{report.district} · {dateText.format(new Date(report.occurred_at))}</small></div>
@@ -207,7 +232,8 @@ export function ProfilePage() {
       <nav className="menu-list card">
         <a href="#/notificaciones"><Award size={18} /> Notificaciones <ChevronRight size={16} /></a>
         <a href="#/guias"><BookOpen size={18} /> Guías y privacidad <ChevronRight size={16} /></a>
-        {account.role !== 'citizen' && <a href="#/portal"><LayoutDashboard size={18} /> Portal interno del equipo <ChevronRight size={16} /></a>}
+        <InstallItem />
+        {account.role !== 'citizen' && <a href="/#/portal" target={isStandalone() ? '_blank' : undefined} rel="noreferrer"><LayoutDashboard size={18} /> Portal interno (modo web) <ChevronRight size={16} /></a>}
         <button onClick={() => void logout()}><LogOut size={18} /> Cerrar sesión</button>
       </nav>
     </div>
@@ -235,7 +261,7 @@ export function NotificationsPage() {
     <AppBar title="Notificaciones" back={() => history.back()} />
     <div className="content">
       <ErrorText>{error}</ErrorText>
-      {items && !items.length && <Empty>No tienes notificaciones.</Empty>}
+      {items && !items.length && <EmptyArt text="No tienes notificaciones." />}
       <ul className="notes card">
         {items?.map((item) => <li key={item.id} className={item.read ? '' : 'unread'}>
           {noteIcons[item.kind] || <Award size={18} />}
@@ -294,4 +320,16 @@ export function GuidesPage() {
       </section>
     </div>
   </div>;
+}
+
+export function InstallItem() {
+  const { canInstall, installed, iosHint, install } = useInstall();
+  const [hint, setHint] = useState(false);
+  if (installed) return null;
+  if (canInstall) return <button className="install-item" onClick={() => void install()}><Download size={18} /> Instalar la app en este dispositivo</button>;
+  if (iosHint) return <>
+    <button className="install-item" onClick={() => setHint(!hint)}><Download size={18} /> Instalar la app en tu iPhone</button>
+    {hint && <p className="small muted">Toca <Share size={13} /> Compartir y luego «Agregar a pantalla de inicio».</p>}
+  </>;
+  return null;
 }

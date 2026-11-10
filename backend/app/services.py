@@ -23,7 +23,7 @@ class Input(BaseModel):
 
 
 def account_view(account: Account):
-    return dict(id=account.id, name=account.name, email=account.email, role=account.role, district=account.district)
+    return dict(id=account.id, name=account.name, email=account.email, role=account.role, district=account.district, function=account.function)
 
 
 def vote_counts(db: Session, report_ids: list[str]) -> dict[str, Counter]:

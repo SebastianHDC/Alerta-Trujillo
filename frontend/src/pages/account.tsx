@@ -8,6 +8,7 @@ import { AppBar, CategoryIcon, Empty, ErrorText, Logo, StatusBadge } from '../co
 import { go, useApp } from '../context';
 import { CityLiveArt, CommunityArt, EmptyArt, PhoneReportArt, RadarArt, Skyline } from '../illustrations';
 import { isStandalone, useInstall } from '../pwa';
+import { ResourcePreview } from '../portal/knowledge';
 
 // ---------- Splash y onboarding ----------
 
@@ -299,7 +300,7 @@ export function ContactsPage() {
   </div>;
 }
 
-type Guide = { id: string; title: string; body: string; version: number; updated_at: string };
+type Guide = { id: string; title: string; kind: string; body: string; version: number; updated_at: string; resource_url: string | null; attachment: string | null; attachment_name: string | null; attachment_type: string | null };
 
 export function GuidesPage() {
   const [items, setItems] = useState<Guide[]>();
@@ -310,7 +311,7 @@ export function GuidesPage() {
     <div className="content">
       <ErrorText>{error}</ErrorText>
       <section className="card guides">
-        {items?.map((guide) => <details key={guide.id}><summary>{guide.title}</summary><p>{guide.body}</p>
+        {items?.map((guide) => <details key={guide.id}><summary>{guide.title}</summary><ResourcePreview item={guide} />
           <small className="muted">Versión {guide.version} · revisada por el equipo</small></details>)}
         <details><summary>Privacidad de tus datos</summary><p>
           No publicamos tu nombre, correo ni documento. Del documento solo guardamos una huella cifrada para evitar cuentas duplicadas.

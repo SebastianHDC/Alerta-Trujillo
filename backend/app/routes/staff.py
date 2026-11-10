@@ -206,6 +206,7 @@ class KnowledgeInput(Input):
     action: str | None = Text
     result: str | None = Text
     limits: str | None = Text
+    resource_url: str | None = Field(default=None, max_length=500, pattern=r"^https://[^\s]+$")
     report_id: str | None = None
     owner_id: str
     backup_id: str | None = None
@@ -232,7 +233,7 @@ class UseInput(Input):
     report_id: str | None = None
 
 
-FIELDS = ("title", "category", "kind", "audience", "body", "problem", "action", "result", "limits", "report_id", "owner_id", "backup_id", "review_due")
+FIELDS = ("title", "category", "kind", "audience", "body", "problem", "action", "result", "limits", "resource_url", "report_id", "owner_id", "backup_id", "review_due")
 
 
 def item_view(db: DB, item: KnowledgeItem, full: bool = False):
@@ -240,12 +241,15 @@ def item_view(db: DB, item: KnowledgeItem, full: bool = False):
     view = dict(
         id=item.id, title=item.title, category=item.category, kind=item.kind, audience=item.audience, status=item.status,
         version=item.version, owner=names(item.owner_id), owner_id=item.owner_id, backup=names(item.backup_id), backup_id=item.backup_id,
-        review_due=item.review_due, updated_at=utc(item.updated_at), last_editor_id=item.last_editor_id,
+        review_due=item.review_due, updated_at=utc(item.updated_at), created_at=utc(item.created_at), last_editor_id=item.last_editor_id,
+        resource_url=item.resource_url, attachment=f"/api/knowledge/{item.id}/attachment" if item.attachment else None,
+        attachment_name=item.attachment_name, attachment_type=item.attachment_type,
+        problem=item.problem, action=item.action,
         uses=db.scalar(select(func.count()).select_from(KnowledgeUse).where(KnowledgeUse.item_id == item.id)),
     )
     if full:
         view |= dict(
-            body=item.body, problem=item.problem, action=item.action, result=item.result, limits=item.limits,
+            body=item.body, result=item.result, limits=item.limits,
             report_id=item.report_id, approved_by=names(item.approved_by), last_editor=names(item.last_editor_id),
             versions=[dict(version=v.version, note=v.change_note, editor=names(v.editor_id), at=utc(v.created_at))
                       for v in db.scalars(select(KnowledgeVersion).where(KnowledgeVersion.item_id == item.id).order_by(KnowledgeVersion.version.desc()))],

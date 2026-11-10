@@ -65,6 +65,8 @@ def login(payload: Credentials, db: DB, response: Response):
     valid = verify_password(payload.password, account.password_hash if account else DUMMY_HASH)
     if not account or not valid:
         raise HTTPException(401, "Correo o contraseña incorrectos.")
+    if not account.active:
+        raise HTTPException(403, "Tu cuenta está desactivada. Comunícate con el equipo del proyecto.")
     start_session(account, db, response)
     return account_view(account)
 

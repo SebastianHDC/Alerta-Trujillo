@@ -33,10 +33,29 @@ KNOWLEDGE_CATEGORIES = {
 }
 
 KNOWLEDGE_KINDS = {
+    "documento": "Documento",
+    "procedimiento": "Procedimiento",
     "guia": "Guía",
     "manual": "Manual",
+    "video": "Video",
     "faq": "Pregunta frecuente",
     "leccion": "Lección aprendida",
+}
+
+# Funciones del equipo y conocimiento crítico de cada una (informe, cap. VIII, tablas 6 y 9).
+STAFF_FUNCTIONS = {
+    "coordinacion": {"label": "Coordinación", "process": "Organización y derivación", "category": "incidencias",
+                     "knowledge": "Alcance del piloto, responsabilidades y competencias de los contactos confirmados."},
+    "conocimiento": {"label": "Gestión del conocimiento", "process": "Documentación y formación", "category": "aprendizaje",
+                     "knowledge": "Clasificación de contenidos, elaboración de guías y recuperación de lecciones aprendidas."},
+    "participacion": {"label": "Participación", "process": "Recopilación de aportes", "category": "contexto",
+                      "knowledge": "Vocabulario local, necesidades de los vecinos y formas comprensibles de recoger información."},
+    "validacion": {"label": "Validación (moderación)", "process": "Revisión de incidencias", "category": "incidencias",
+                   "knowledge": "Criterios para aclarar descripciones, reconocer duplicados y proteger información sensible."},
+    "desarrollo": {"label": "Desarrollo", "process": "Soporte tecnológico", "category": "operacion",
+                   "knowledge": "Funcionamiento de la aplicación, gestión de accesos y recuperación de la información."},
+    "analisis": {"label": "Análisis de información", "process": "Análisis y consulta", "category": "analisis",
+                 "knowledge": "Definición de indicadores e interpretación de los datos según su periodo y estado de revisión."},
 }
 
 # Lista de control aplicada antes de mostrar un reporte (informe, estrategia FA1).

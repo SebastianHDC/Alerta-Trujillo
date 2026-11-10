@@ -68,6 +68,8 @@ class Account(Base):
     document_type: Mapped[str | None] = mapped_column(String(10))
     # Huella HMAC del documento: evita cuentas duplicadas sin guardar el número.
     document_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
+    function: Mapped[str | None] = mapped_column(String(20))  # Función en el equipo (solo personal).
+    active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
@@ -173,13 +175,17 @@ class KnowledgeItem(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     title: Mapped[str] = mapped_column(String(120))
     category: Mapped[str] = mapped_column(String(20))
-    kind: Mapped[str] = mapped_column(String(10))
+    kind: Mapped[str] = mapped_column(String(20))
     audience: Mapped[str] = mapped_column(String(10), default="internal")
     body: Mapped[str] = mapped_column(Text, default="")
     problem: Mapped[str | None] = mapped_column(Text)
     action: Mapped[str | None] = mapped_column(Text)
     result: Mapped[str | None] = mapped_column(Text)
     limits: Mapped[str | None] = mapped_column(Text)
+    resource_url: Mapped[str | None] = mapped_column(String(500))
+    attachment: Mapped[str | None] = mapped_column(String(80))
+    attachment_type: Mapped[str | None] = mapped_column(String(80))
+    attachment_name: Mapped[str | None] = mapped_column(String(120))
     report_id: Mapped[str | None] = mapped_column(ForeignKey("reports.id", ondelete="SET NULL"))
     owner_id: Mapped[str] = mapped_column(ForeignKey("accounts.id"))
     backup_id: Mapped[str | None] = mapped_column(ForeignKey("accounts.id"))

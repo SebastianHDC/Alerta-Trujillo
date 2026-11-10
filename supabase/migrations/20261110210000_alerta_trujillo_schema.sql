@@ -1,4 +1,4 @@
--- Alerta Trujillo production schema; private to the FastAPI backend.
+-- Alerta Trujillo production schema - private to the FastAPI backend.
 
 -- Emergency contact references: https://www.gob.pe/547-telefonos-de-emergencia
 

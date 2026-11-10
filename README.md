@@ -109,6 +109,26 @@ $env:APP_MODE = 'demo'
 
 Abre [http://127.0.0.1:8000](http://127.0.0.1:8000). La compilación se actualiza al ejecutar `npm.cmd run build` de nuevo.
 
+## Módulos del portal (avance para el docente)
+
+El portal del equipo (`#/portal`, modo web) organiza el Sistema de Gestión del Conocimiento en siete módulos:
+
+| Módulo | Ruta | Qué permite demostrar |
+| --- | --- | --- |
+| M1 · Inicio / Dashboard | `#/portal` | Accesos a los módulos y resumen de reportes, revisión y conocimiento. |
+| M2 · Usuarios y roles | `#/portal/usuarios` | Cuentas de vecinos y del equipo, rol, función en el SGC, activar o desactivar, alta de cuentas con contraseña temporal y matriz de permisos. |
+| M3 · Base de conocimiento | `#/portal/conocimiento` | Documentos, procedimientos (pasos numerados), manuales, videos (enlace o archivo), guías y preguntas frecuentes, con adjuntos, versiones y aprobación por otra persona. |
+| M4 · Lecciones aprendidas | `#/portal/lecciones` | Fichas con problema, solución, responsable y fecha, además de resultado, límites y reutilizaciones. |
+| M5 · Mapa de conocimiento | `#/portal/mapa` | Diagrama interactivo personas → funciones → áreas, riesgo de continuidad y búsqueda «¿A quién pregunto?». |
+| M6 · Indicadores | `#/portal/indicadores` | Diez indicadores con fórmula, meta, semáforo y evolución semanal. |
+| M7 · Reportes | `#/portal/reportes` | Reportes filtrados por periodo, distrito, categoría y estado; impresión o PDF y exportación a CSV (Excel). |
+
+Cuentas del equipo en modo demo: `gestor@example.com` / `GestorDemo26!` (gestión), `moderador@example.com` / `ModeradorDemo26!`, `coordinacion@example.com` / `CoordinaDemo26!`, `analista@example.com` / `AnalistaDemo26!` y `enlace@example.com` / `EnlaceDemo26!`. `suspendida@example.com` muestra una cuenta desactivada.
+
+### Migraciones de Supabase
+
+El esquema vive en `supabase/migrations/` y se aplica en orden: `20261110210000_alerta_trujillo_schema.sql` crea las tablas y `20261111090000_modulos_portal.sql` agrega la función y el estado de las cuentas, los nuevos tipos de recurso y los adjuntos. Con la CLI de Supabase: `supabase db push`. Los modelos de SQLAlchemy y las migraciones deben mantenerse iguales; cualquier columna nueva necesita su propia migración.
+
 ## App instalable (PWA)
 
 La app ciudadana es una PWA: se instala en el celular o la computadora, abre a pantalla completa y conserva el mapa y las últimas alertas públicas aunque falle la señal. El portal del equipo (`#/portal`) está pensado para usarse en **modo web**, en una computadora; si se abre desde la app instalada, muestra un enlace para abrirlo en el navegador.

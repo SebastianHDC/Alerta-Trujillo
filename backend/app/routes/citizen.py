@@ -189,4 +189,6 @@ def contacts(db: DB):
 @router.get("/guides")
 def guides(db: DB):
     query = select(KnowledgeItem).where(KnowledgeItem.audience == "public", KnowledgeItem.status == "current").order_by(KnowledgeItem.title)
-    return [dict(id=item.id, title=item.title, body=item.body, version=item.version, updated_at=utc(item.updated_at)) for item in db.scalars(query)]
+    return [dict(id=item.id, title=item.title, kind=item.kind, body=item.body, version=item.version, updated_at=utc(item.updated_at),
+                 resource_url=item.resource_url, attachment=f"/api/knowledge/{item.id}/attachment" if item.attachment else None,
+                 attachment_name=item.attachment_name, attachment_type=item.attachment_type) for item in db.scalars(query)]

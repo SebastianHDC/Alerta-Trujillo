@@ -9,8 +9,9 @@ export type Catalog = {
   knowledge_categories: Record<string, string>;
   knowledge_kinds: Record<string, string>;
   checklist: Record<string, string>;
+  functions: Record<string, string>;
 };
-export type Account = { id: string; name: string; email: string; role: Role; district: string | null };
+export type Account = { id: string; name: string; email: string; role: Role; district: string | null; function?: string | null };
 export type Alert = {
   id: string; category: string; district: string; description: string; latitude: number; longitude: number;
   occurred_at: string; risk: Risk; status: 'community' | 'verified'; sample: boolean;

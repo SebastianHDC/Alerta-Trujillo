@@ -55,7 +55,8 @@ SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE)]
 
 def optional_account(db: DB, token: SessionCookie = None) -> Account | None:
     session = db.get(LoginSession, token_hash(token)) if token else None
-    return db.get(Account, session.account_id) if session and utc(session.expires_at) > now() else None
+    account = db.get(Account, session.account_id) if session and utc(session.expires_at) > now() else None
+    return account if account and account.active else None
 
 
 OptionalAccount = Annotated[Account | None, Depends(optional_account)]

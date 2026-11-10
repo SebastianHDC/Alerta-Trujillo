@@ -1,28 +1,39 @@
 import { FormEvent, ReactNode, useEffect, useState } from 'react';
-import { ArrowLeft, BookOpen, ClipboardCheck, LayoutDashboard, Phone, RefreshCw, Shield } from 'lucide-react';
+import { ArrowLeft, BarChart3, BookOpen, ClipboardCheck, FileSpreadsheet, GraduationCap, LayoutDashboard, Network, Phone, RefreshCw, Shield, Users } from 'lucide-react';
 import { Report, Risk, api, ago, dateText, message, risks, roles } from '../api';
 import { CategoryIcon, Empty, ErrorText, RiskBadge, StatusBadge } from '../components';
 import { go, useApp } from '../context';
 import { MapView } from '../MapView';
-import { KnowledgeEditor, KnowledgeList, useCurrentKnowledge } from './knowledge';
+import { KnowledgeEditor, KnowledgeList, LessonsPage, useCurrentKnowledge } from './knowledge';
+import { UsersPage } from './users';
+import { KnowledgeMapPage } from './knowledgeMap';
+import { IndicatorsPage } from './indicators';
+import { ReportsPage } from './reports';
 import { isStandalone } from '../pwa';
 
 export function Portal({ section, id }: { section: string; id?: string }) {
-  const { account } = useApp();
+  const { account, catalog } = useApp();
   if (!account || account.role === 'citizen') {
     return <div className="portal-denied"><Shield size={40} /><h1>Portal interno</h1><p>Disponible para el equipo de moderación y gestión del conocimiento.</p>
       <button className="primary" onClick={() => go(account ? 'mapa' : 'login')}>{account ? 'Volver a la app' : 'Iniciar sesión'}</button></div>;
   }
-  const links: [string, string, typeof Shield][] = [
-    ['portal', 'Dashboard', LayoutDashboard], ['portal/revision', 'Revisión', ClipboardCheck],
-    ['portal/conocimiento', 'Conocimiento', BookOpen], ['portal/contactos', 'Directorio', Phone],
+  const links: [string, string, typeof Shield, string][] = [
+    ['portal', 'Inicio', LayoutDashboard, 'M1'], ['portal/usuarios', 'Usuarios y roles', Users, 'M2'],
+    ['portal/conocimiento', 'Base de conocimiento', BookOpen, 'M3'], ['portal/lecciones', 'Lecciones aprendidas', GraduationCap, 'M4'],
+    ['portal/mapa', 'Mapa de conocimiento', Network, 'M5'], ['portal/indicadores', 'Indicadores', BarChart3, 'M6'],
+    ['portal/reportes', 'Reportes', FileSpreadsheet, 'M7'],
+    ['portal/revision', 'Revisión de alertas', ClipboardCheck, ''], ['portal/contactos', 'Directorio', Phone, ''],
   ];
   const current = section ? 'portal/' + section : 'portal';
   return <div className="portal">
     <aside className="portal-nav">
       <div className="portal-brand"><Shield size={20} /><div><strong>Alerta Trujillo</strong><small>Portal del equipo · modo web</small></div></div>
-      <nav>{links.map(([path, label, Icon]) => <a key={path} href={'#/' + path} className={current === path ? 'current' : ''} aria-current={current === path ? 'page' : undefined}><Icon size={18} />{label}</a>)}</nav>
-      <div className="portal-user"><strong>{account.name}</strong><small>{roles[account.role]}</small><a href="#/mapa"><ArrowLeft size={14} /> Volver a la app</a></div>
+      <nav>
+        <span className="nav-group">Módulos</span>
+        {links.map(([path, label, Icon, code]) => <a key={path} href={'#/' + path} className={(current === path ? 'current' : '') + (code ? '' : ' secondary-link')}
+          aria-current={current === path ? 'page' : undefined}><Icon size={18} /><span>{label}</span>{code && <small className="module-code">{code}</small>}</a>)}
+      </nav>
+      <div className="portal-user"><strong>{account.name}</strong><small>{roles[account.role]}{account.function ? ' · ' + (catalog.functions[account.function] || '') : ''}</small><a href="#/mapa"><ArrowLeft size={14} /> Volver a la app</a></div>
     </aside>
     <main className="portal-main">
       {(isStandalone() || window.matchMedia('(max-width: 700px)').matches) && <div className="hint web-hint">
@@ -31,12 +42,17 @@ export function Portal({ section, id }: { section: string; id?: string }) {
       {section === '' && <Dashboard />}
       {section === 'revision' && <ReviewQueue />}
       {section === 'conocimiento' && (id ? <KnowledgeEditor id={id} /> : <KnowledgeList />)}
+      {section === 'usuarios' && <UsersPage />}
+      {section === 'lecciones' && <LessonsPage />}
+      {section === 'mapa' && <KnowledgeMapPage />}
+      {section === 'indicadores' && <IndicatorsPage />}
+      {section === 'reportes' && <ReportsPage />}
       {section === 'contactos' && <ContactsAdmin />}
     </main>
   </div>;
 }
 
-function PageHead({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
+export function PageHead({ title, text, action }: { title: string; text: string; action?: ReactNode }) {
   return <div className="portal-head"><div><h1>{title}</h1><p className="muted">{text}</p></div>{action}</div>;
 }
 
@@ -75,6 +91,7 @@ function Dashboard() {
   const load = () => api<DashboardData>('/staff/dashboard').then(setData, (error) => setError(message(error)));
   useEffect(() => { void load(); }, []);
   return <>
+    <ModuleShortcuts />
     <PageHead title="Dashboard gerencial" text="Volumen, estado de revisión y reutilización del conocimiento. Los datos de demostración son ficticios."
       action={<button className="secondary" onClick={() => void load()}><RefreshCw size={15} /> Actualizar</button>} />
     <ErrorText>{error}</ErrorText>
@@ -243,4 +260,22 @@ function ContactsAdmin() {
       {saved === item.id && <small className="ok-text">Guardado.</small>}
     </form>)}</div>
   </>;
+}
+
+function ModuleShortcuts() {
+  const { account } = useApp();
+  const cards: [string, string, string, typeof Shield][] = [
+    ['portal/usuarios', 'Usuarios y roles', 'Cuentas del equipo, funciones y accesos.', Users],
+    ['portal/conocimiento', 'Base de conocimiento', 'Documentos, procedimientos, manuales, videos y FAQ.', BookOpen],
+    ['portal/lecciones', 'Lecciones aprendidas', 'Problema, solución, responsable y fecha.', GraduationCap],
+    ['portal/mapa', 'Mapa de conocimiento', 'Quién sabe qué y dónde hay riesgo de pérdida.', Network],
+    ['portal/indicadores', 'Indicadores', 'Fórmula, meta y semáforo de cada indicador.', BarChart3],
+    ['portal/reportes', 'Reportes', 'Filtra, imprime o exporta a Excel (CSV).', FileSpreadsheet],
+  ];
+  return <section className="welcome">
+    <div className="welcome-copy"><small className="muted">M1 · Inicio</small><h1>Hola, {account?.name}</h1>
+      <p className="muted">Sistema de Gestión del Conocimiento de Alerta Trujillo. Elige un módulo o revisa el resumen del día.</p></div>
+    <div className="shortcut-grid">{cards.map(([path, title, text, Icon], index) => <a key={path} href={'#/' + path} className="shortcut">
+      <span className="shortcut-icon"><Icon size={20} /></span><strong>M{index + 2} · {title}</strong><small>{text}</small></a>)}</div>
+  </section>;
 }

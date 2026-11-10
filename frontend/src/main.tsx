@@ -12,6 +12,7 @@ import { Portal } from './portal/portal';
 import { permissionState, registerServiceWorker } from './pwa';
 import './styles.css';
 import './visual.css';
+import './modules.css';
 
 function readRoute() {
   const [path, ...rest] = location.hash.replace(/^#\/?/, '').split('/');

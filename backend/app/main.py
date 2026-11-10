@@ -6,9 +6,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .catalog import CATEGORIES, DISTRICTS, KNOWLEDGE_CATEGORIES, KNOWLEDGE_KINDS, REVIEW_CHECKLIST
+from .catalog import CATEGORIES, DISTRICTS, KNOWLEDGE_CATEGORIES, KNOWLEDGE_KINDS, REVIEW_CHECKLIST, STAFF_FUNCTIONS
 from .database import DEMO
-from .routes import auth, citizen, staff
+from .routes import auth, citizen, modules, staff
 
 
 def check_api_request(request: Request):
@@ -55,12 +55,14 @@ def catalog():
     return {
         "categories": CATEGORIES, "districts": DISTRICTS, "demo": DEMO,
         "knowledge_categories": KNOWLEDGE_CATEGORIES, "knowledge_kinds": KNOWLEDGE_KINDS, "checklist": REVIEW_CHECKLIST,
+        "functions": {key: value["label"] for key, value in STAFF_FUNCTIONS.items()},
     }
 
 
 api.include_router(auth.router)
 api.include_router(citizen.router)
 api.include_router(staff.router)
+api.include_router(modules.router)
 app.include_router(api)
 mimetypes.add_type("application/manifest+json", ".webmanifest")
 dist = Path(__file__).resolve().parents[2] / "frontend" / "dist"

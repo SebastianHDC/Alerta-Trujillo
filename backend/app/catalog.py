@@ -1,7 +1,9 @@
 CATEGORIES = {
-    "robo": "Robo o intento de robo",
-    "iluminacion": "Iluminación deficiente",
+    "robo": "Robo",
+    "hurto": "Hurto o asalto",
+    "sospechoso": "Actividad sospechosa",
     "vandalismo": "Vandalismo",
+    "iluminacion": "Iluminación deficiente",
     "via": "Obstáculo en la vía",
     "otro": "Otra incidencia",
 }
@@ -20,3 +22,31 @@ DISTRICTS = {
     "Simbal": (-7.9771, -78.8136),
     "Alto Trujillo": (-8.0448, -78.9917),
 }
+
+# Taxonomía del conocimiento (informe, cap. VIII, tabla 10).
+KNOWLEDGE_CATEGORIES = {
+    "contexto": "Contexto urbano",
+    "incidencias": "Gestión de incidencias",
+    "aprendizaje": "Aprendizaje",
+    "operacion": "Operación tecnológica",
+    "analisis": "Análisis de información",
+}
+
+KNOWLEDGE_KINDS = {
+    "guia": "Guía",
+    "manual": "Manual",
+    "faq": "Pregunta frecuente",
+    "leccion": "Lección aprendida",
+}
+
+# Lista de control aplicada antes de mostrar un reporte (informe, estrategia FA1).
+REVIEW_CHECKLIST = {
+    "sin_nombres": "El resumen no contiene nombres, apodos ni rasgos de personas identificables.",
+    "sin_domicilios": "No incluye domicilios exactos, placas ni números de contacto.",
+    "sin_acusaciones": "No acusa a personas o negocios identificables.",
+    "no_emergencia": "No es una emergencia en curso que deba derivarse a los canales oficiales.",
+}
+
+POINTS_VERIFIED_REPORT = 10
+POINTS_VOTE = 2
+POINTS_VOTE_MATCH = 5

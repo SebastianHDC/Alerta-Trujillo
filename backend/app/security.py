@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 import secrets
 from datetime import timedelta
 from typing import Annotated
@@ -14,6 +15,14 @@ DB = Annotated[Session, Depends(db_session)]
 SESSION_COOKIE = "alerta_session"
 COOKIE_OPTIONS = dict(httponly=True, secure=not DEMO, samesite="strict", path="/api")
 SESSION_AGE = timedelta(hours=12)
+DOCUMENT_PEPPER = os.getenv("DOCUMENT_PEPPER") or ("demo-pepper" if DEMO else "")
+if not DOCUMENT_PEPPER:
+    raise RuntimeError("Configura DOCUMENT_PEPPER con un valor secreto largo.")
+
+
+def document_hash(kind: str, number: str) -> str:
+    normalized = kind + ":" + "".join(char for char in number.upper() if char.isalnum())
+    return hmac.new(DOCUMENT_PEPPER.encode(), normalized.encode(), hashlib.sha256).hexdigest()
 
 
 def password_hash(password: str, salt: str | None = None) -> str:
@@ -44,9 +53,15 @@ def start_session(account: Account, db: Session, response: Response):
 SessionCookie = Annotated[str | None, Cookie(alias=SESSION_COOKIE)]
 
 
-def current_account(db: DB, token: SessionCookie = None) -> Account:
+def optional_account(db: DB, token: SessionCookie = None) -> Account | None:
     session = db.get(LoginSession, token_hash(token)) if token else None
-    account = db.get(Account, session.account_id) if session and utc(session.expires_at) > now() else None
+    return db.get(Account, session.account_id) if session and utc(session.expires_at) > now() else None
+
+
+OptionalAccount = Annotated[Account | None, Depends(optional_account)]
+
+
+def current_account(account: OptionalAccount) -> Account:
     if account is None:
         raise HTTPException(401, "Inicia sesión para continuar.")
     return account
@@ -55,10 +70,17 @@ def current_account(db: DB, token: SessionCookie = None) -> Account:
 CurrentAccount = Annotated[Account, Depends(current_account)]
 
 
-def require_moderator(account: CurrentAccount) -> Account:
-    if account.role != "moderator":
-        raise HTTPException(403, "Esta acción requiere permisos de moderación.")
+def require_staff(account: CurrentAccount) -> Account:
+    if account.role not in {"moderator", "manager"}:
+        raise HTTPException(403, "Esta acción requiere permisos del equipo.")
     return account
 
 
-Moderator = Annotated[Account, Depends(require_moderator)]
+def require_manager(account: CurrentAccount) -> Account:
+    if account.role != "manager":
+        raise HTTPException(403, "Esta acción requiere el rol de gestión.")
+    return account
+
+
+Staff = Annotated[Account, Depends(require_staff)]
+Manager = Annotated[Account, Depends(require_manager)]

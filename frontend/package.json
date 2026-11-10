@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
+    "@types/leaflet.heat": "0.2.5",
     "leaflet": "1.9.4",
+    "leaflet.heat": "0.2.0",
     "lucide-react": "0.487.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"

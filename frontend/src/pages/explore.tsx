@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, ChevronRight, Clock3, Crosshair, HelpCircle, MapPin, Navigation, Search, SlidersHorizontal, ThumbsDown, ThumbsUp, X, XCircle } from 'lucide-react';
 import { Alert, Risk, api, ago, dateText, defaultFilters, distanceKm, filterAlerts, message, risks, timeRanges } from '../api';
 import { AppBar, BellButton, CategoryIcon, Empty, ErrorText, Modal, RiskBadge, StatusBadge } from '../components';
 import { go, useApp } from '../context';
 import { MapView } from '../MapView';
+import { CategoryScene, EmptyArt } from '../illustrations';
+import { useInstall } from '../pwa';
 
 function activeFilters(filters: typeof defaultFilters) {
   return filters.categories.length + (filters.risk ? 1 : 0) + (filters.hours !== defaultFilters.hours ? 1 : 0);
@@ -16,6 +18,11 @@ export function MapPage() {
   const [center, setCenter] = useState<{ point: [number, number] }>();
   const visible = useMemo(() => filterAlerts(alerts || [], filters, catalog), [alerts, filters, catalog]);
   const count = activeFilters(filters);
+  const centered = useRef(false);
+  useEffect(() => {
+    if (position && !centered.current) { centered.current = true; setCenter({ point: position }); }
+  }, [position]);
+  const nearby = position ? visible.filter((alert) => distanceKm(position, [alert.latitude, alert.longitude]) <= 1).length : 0;
   return <div className="screen map-screen">
     <AppBar title="Alerta Trujillo" action={<BellButton unread={unread} onClick={() => go(account ? 'notificaciones' : 'login')} />} />
     <div className="map-stage">
@@ -38,7 +45,10 @@ export function MapPage() {
       </div>
       <button className="locate-fab" aria-label="Usar mi ubicación" onClick={() => void locate().then((point) => point && setCenter({ point }))}><Crosshair size={20} /></button>
       {selected && <AlertSheet alert={selected} onClose={() => setSelected(null)} />}
-      {!selected && <div className="map-count">{alerts === undefined ? 'Cargando alertas…' : `${visible.length} alertas en el mapa`}</div>}
+      {!selected && (position
+        ? <button className="map-count nearby" onClick={() => go('alertas')}><Navigation size={13} /> {nearby} {nearby === 1 ? 'alerta' : 'alertas'} a menos de 1 km de ti</button>
+        : <div className="map-count">{alerts === undefined ? 'Cargando alertas…' : `${visible.length} alertas en el mapa`}</div>)}
+      {!selected && <InstallBanner />}
     </div>
     <ErrorText retry={reloadAlerts}>{alertsError}</ErrorText>
     <ValidatePrompt />
@@ -164,7 +174,7 @@ export function AlertsPage() {
       {!position && <p className="hint"><Navigation size={15} /> {locating ? 'Buscando tu ubicación…' : 'Activa tu ubicación para ordenar las alertas por cercanía.'}</p>}
       <ErrorText retry={reloadAlerts}>{alertsError}</ErrorText>
       {alerts === undefined && !alertsError && <Empty>Cargando alertas…</Empty>}
-      {alerts && !list.length && <Empty>No hay alertas con los filtros actuales.</Empty>}
+      {alerts && !list.length && <EmptyArt text="No hay alertas con los filtros actuales. ¡Buena señal!" />}
       <div className="stack">
         {list.map(({ alert, km }) => <button key={alert.id} className={'alert-card risk-' + alert.risk} onClick={() => go('alerta/' + alert.id)}>
           <div className="alert-card-main">
@@ -194,7 +204,7 @@ export function AlertDetail({ id }: { id: string }) {
     <AppBar title="Detalle de alerta" back={() => history.back()} />
     <div className="detail-hero">
       {alert.photo ? <img src={alert.photo} alt={'Foto de la incidencia: ' + catalog.categories[alert.category]} />
-        : <div className={'hero-placeholder ' + alert.risk}><CategoryIcon category={alert.category} size={48} /></div>}
+        : <CategoryScene category={alert.category} risk={alert.risk} />}
     </div>
     <div className="content">
       <section className="card">
@@ -208,7 +218,7 @@ export function AlertDetail({ id }: { id: string }) {
       </section>
       <section className="card">
         <h3 className="card-title">Validar reporte</h3>
-        {alert.status === 'verified' ? <p className="ok-text"><CheckCircle2 size={16} /> El equipo verificó esta alerta. {alert.confirmations} vecinos la confirmaron.</p>
+        {alert.status === 'verified' ? <p className="ok-text"><CheckCircle2 size={16} /> El equipo verificó esta alerta. {alert.confirmations === 1 ? '1 vecino la confirmó.' : `${alert.confirmations} vecinos la confirmaron.`}</p>
           : alert.own ? <p className="muted">Es tu reporte: otros vecinos pueden validarlo. Llevas {alert.confirmations} confirmaciones y {alert.denials} reportes de falso.</p>
           : !account ? <button className="link" onClick={() => go('login')}>Inicia sesión para validar esta alerta</button>
           : account.role !== 'citizen' ? <p className="muted">El equipo decide desde el portal interno. Votos: {alert.confirmations} reales, {alert.denials} falsos.</p>
@@ -225,4 +235,18 @@ export function AlertDetail({ id }: { id: string }) {
 
 export function StatusIcon({ ok }: { ok: boolean }) {
   return ok ? <CheckCircle2 size={16} className="ok" /> : <XCircle size={16} className="bad" />;
+}
+
+const installKey = 'alerta-install-dismissed';
+function InstallBanner() {
+  const { canInstall, install } = useInstall();
+  const [hidden, setHidden] = useState(() => { try { return localStorage.getItem(installKey) === '1'; } catch { return false; } });
+  if (!canInstall || hidden) return null;
+  const dismiss = () => { setHidden(true); try { localStorage.setItem(installKey, '1'); } catch { /* opcional */ } };
+  return <div className="install-banner" role="region" aria-label="Instalar aplicación">
+    <img src="/icons/icon-192.png" alt="" width={36} height={36} />
+    <div><strong>Instala Alerta Trujillo</strong><small>Acceso directo, pantalla completa y alertas aunque falle la señal.</small></div>
+    <button className="primary" onClick={() => void install().then(dismiss)}>Instalar</button>
+    <button className="modal-close static" aria-label="Ahora no" onClick={dismiss}><X size={16} /></button>
+  </div>;
 }

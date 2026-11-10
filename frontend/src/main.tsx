@@ -9,7 +9,9 @@ import {
   ContactsPage, GuidesPage, Login, NotificationsPage, Onboarding, ProfilePage, Register, RequireAccount, Splash,
 } from './pages/account';
 import { Portal } from './portal/portal';
+import { permissionState, registerServiceWorker } from './pwa';
 import './styles.css';
+import './visual.css';
 
 function readRoute() {
   const [path, ...rest] = location.hash.replace(/^#\/?/, '').split('/');
@@ -74,6 +76,8 @@ function App() {
       () => resolve(null), { timeout: 8000, maximumAge: 60_000 },
     );
   }), []);
+  // Si el vecino ya dio permiso, la app arranca centrada en su ubicación (acceso directo «cerca de mí»).
+  useEffect(() => { void permissionState('geolocation').then((state) => { if (state === 'granted') void locate(); }); }, [locate]);
 
   const state = useMemo<AppState | null>(() => catalog && account !== undefined ? {
     catalog, account, setAccount, alerts, alertsError, reloadAlerts: () => setAlertsVersion((value) => value + 1),
@@ -83,7 +87,7 @@ function App() {
   if (bootError) return <div className="phone"><div className="content"><ErrorText retry={() => setRetry(retry + 1)}>{bootError}</ErrorText></div></div>;
   if (!state || (splash && route.path !== 'portal')) return <div className="phone"><Splash /></div>;
   if (!onboarded && route.path !== 'portal') {
-    return <div className="phone"><Onboarding onDone={() => { storage.set('alerta-onboarded', '1'); setOnboarded(true); }} /></div>;
+    return <AppContext.Provider value={state}><div className="phone"><Onboarding onDone={() => { storage.set('alerta-onboarded', '1'); setOnboarded(true); }} /></div></AppContext.Provider>;
   }
 
   const { path, rest } = route;
@@ -115,4 +119,5 @@ function App() {
   </AppContext.Provider>;
 }
 
+registerServiceWorker();
 createRoot(document.getElementById('root')!).render(<App />);

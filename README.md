@@ -109,6 +109,17 @@ $env:APP_MODE = 'demo'
 
 Abre [http://127.0.0.1:8000](http://127.0.0.1:8000). La compilación se actualiza al ejecutar `npm.cmd run build` de nuevo.
 
+## App instalable (PWA)
+
+La app ciudadana es una PWA: se instala en el celular o la computadora, abre a pantalla completa y conserva el mapa y las últimas alertas públicas aunque falle la señal. El portal del equipo (`#/portal`) está pensado para usarse en **modo web**, en una computadora; si se abre desde la app instalada, muestra un enlace para abrirlo en el navegador.
+
+- **Accesos directos**: al mantener presionado el ícono aparecen *Reportar*, *Cerca de mí* y *Emergencias*.
+- **Ubicación**: el último paso del onboarding pide el permiso. Con el permiso concedido, el mapa se centra en el vecino, muestra cuántas alertas hay a menos de 1 km y el formulario de reporte arranca en su ubicación y distrito.
+- **Cámara**: *Tomar foto* y *Grabar video* abren una cámara integrada (vista previa, cambio de cámara, videos de hasta 20 s). Si el navegador no da acceso, se puede elegir un archivo de la galería.
+- **Service worker** (`frontend/public/sw.js`): solo se activa en la compilación de producción (o en desarrollo con `?sw=1`). Nunca guarda en caché respuestas privadas (sesión, perfil, evidencias, portal) ni mosaicos del mapa.
+
+Para probar la instalación, compila la interfaz y ábrela desde FastAPI en http://127.0.0.1:8000 (ver *Ejecutar con un solo servidor*). En un celular, la cámara, la ubicación y la instalación exigen **HTTPS**; por la IP de la red local (`http://192.168…`) el navegador las bloquea. Para pruebas en el celular, usa un túnel HTTPS o despliega en un dominio con certificado.
+
 ## Arquitectura y conexión a Supabase
 
 ```text
